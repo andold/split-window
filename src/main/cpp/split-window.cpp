@@ -148,6 +148,7 @@ int get_rect_window(Display* display, Window activeWindow, int *x, int *y, unsig
 }
 
 Display *display;
+Window rootWindow;
 int screen;
 Window focusedWindow;
 int screen_width;
@@ -159,15 +160,71 @@ int index_y = -1;
 int index_width = -1;
 int index_height = -1;
 
-int margin_left = 128 + 0;
-int margin_top = -26;
-int margin_right = 0;
-int margin_bottom = 0;
-int margin_width = 128;
-int margin_height = 0;
 int quarter_width = 128;
 int quarter_height = 0;
 
+Window deskbarWindow;
+int deskbar_x, deskbar_y;
+unsigned int deskbar_width, deskbar_height;
+int mleft = 0, mright = 0, mtop = 0, mbottom = 0;	//	margin
+
+int find_deskbar_window(Display *display, Window window, int depth, Window *deskbar) {
+	string target ("xfce4-panel");
+	Window parent;
+	Window root;
+	Window *children;
+	unsigned int num_children;
+
+	char *windowName;
+	Status status = XFetchName(display, window, &windowName);
+	int window_x, window_y;
+	unsigned int window_width, window_height;
+	get_rect_window(display, window, &window_x, &window_y, &window_width, &window_height);
+	if (window_width <= 1 || window_height <= 1) {
+		return 0;
+	}
+
+	if (window_width <= screen_width / 2 && window_height <= screen_height / 2) {
+		return 0;
+	}
+
+	if (windowName) {
+		if (target.compare(windowName) == 0) {
+			logfile
+				<< "depth: " << depth
+				<< ", windowName: " << windowName
+				<< " window(" << window_x << ", " << window_y << ", " << window_width << ", " << window_height << ")"
+				<< endl;
+			*deskbar = window;
+			return 1;
+		} else {
+//			logfile
+//				<< "depth: " << depth
+//				<< ", windowName: " << windowName
+//				<< " window(" << window_x << ", " << window_y << ", " << window_width << ", " << window_height << ")"
+//				<< endl;
+		}
+	} else {
+//		logfile
+//			<< "depth: " << depth
+//			<< ", windowName: " << "no name"
+//			<< " window(" << window_x << ", " << window_y << ", " << window_width << ", " << window_height << ")"
+//			<< endl;
+	}
+	XFree(windowName);
+
+	if (0 == XQueryTree(display, window, &root, &parent, &children, &num_children)) {
+		logfile << "-----------------------return 0" << endl;
+		return 0;
+	}
+
+	for (int cx = 0; cx < num_children; cx++) {
+		if (find_deskbar_window(display, children[cx], depth + 1, deskbar) > 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
 int get_index(int unit, int x) {
 	int margin = 10;
     for (int cx = 0; cx < 5; cx++) {
@@ -179,24 +236,42 @@ int get_index(int unit, int x) {
 	return -1;
 }
 int open() {
-    display = XOpenDisplay(NULL);
-    screen = XDefaultScreen(display);
-    focusedWindow = get_focus_window(display);
+	display = XOpenDisplay(NULL);
+	screen = XDefaultScreen(display);
+	focusedWindow = get_focus_window(display);
 	screen_width = get_width(display, screen);
 	screen_height = get_height(display, screen);
-    get_rect_window(display, focusedWindow, &client_x, &client_y, &client_width, &client_height);
-	Window rootWindow = XDefaultRootWindow(display);
+	get_rect_window(display, focusedWindow, &client_x, &client_y, &client_width, &client_height);
+	rootWindow = XDefaultRootWindow(display);
 	int root_x, root_y;
 	unsigned int root_width, root_height;
-    get_rect_window(display, rootWindow, &root_x, &root_y, &root_width, &root_height);
+	get_rect_window(display, rootWindow, &root_x, &root_y, &root_width, &root_height);
     
-    screen_width -= margin_width;
-    screen_height -= margin_height;
-    quarter_width = screen_width / 4;
-    quarter_height = screen_height / 4;
-    client_x -= margin_left;
-    client_x--;
-    client_y -= 0;
+	find_deskbar_window(display, rootWindow, 0, &deskbarWindow);
+	get_rect_window(display, deskbarWindow, &deskbar_x, &deskbar_y, &deskbar_width, &deskbar_height);
+	if (deskbar_width > screen_width / 2) {
+		if (deskbar_x > 0) {
+			mbottom = deskbar_x;
+		} else {
+			mtop = deskbar_height;
+		}
+	} else if (deskbar_height > screen_height / 2) {
+		if (deskbar_y > 0) {
+			mright = deskbar_y;
+		} else {
+			mleft = deskbar_width;
+		}
+	} else {
+		//	deskbar hidden
+	}
+
+	screen_width -= (mleft + mright);
+	screen_height -= (mtop + mbottom);
+	quarter_width = screen_width / 4;
+	quarter_height = screen_height / 4;
+	client_x -= mleft;
+	client_x--;
+	client_y -= 0;
     //client_y--;
     
 	index_x = get_index(quarter_width, client_x);
@@ -234,7 +309,7 @@ int set_window(int ix, int iy, int iw, int ih) {
 	int w = quarter_width * iw;
 	int h = quarter_height * ih;
 
-    XMoveResizeWindow(display, focusedWindow, x + margin_left, y + margin_top, w, h);
+    XMoveResizeWindow(display, focusedWindow, x + mleft, y + mtop, w, h);
 
    	logfile
     	<< "screen(" << screen_width << ", " << screen_height << ")"
@@ -242,7 +317,9 @@ int set_window(int ix, int iy, int iw, int ih) {
     	<< ", index(" << index_x << ", " << index_y << ", " << index_width << ", " << index_height << ")"
     	<< ", quarter(" << quarter_width << ", " << quarter_height << ")"
     	<< ", next index(" << ix << ", " << iy << ", " << iw << ", " << ih << ")"
-    	<< ", next coord(" << x + margin_left << ", " << y + margin_top << ", " << w << ", " << h << ")"
+    	<< ", next coord(" << x + mleft << ", " << y + mtop << ", " << w << ", " << h << ")"
+		<< ", deskbar(" << deskbar_x << ", " << deskbar_y << ", " << deskbar_width << ", " << deskbar_height << ")"
+		<< ", margin(" << mleft << ", " << mtop << ", " << mright << ", " << mbottom << ")"
    		<< endl;
 
 	return 0;
