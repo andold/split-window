@@ -62,7 +62,7 @@ int initiaize() {
 	append(0, 0, 1, 4, "right",	1, 0, 1, 4);
 
 	append(0, 0, 2, 1, "left",	0, 0, 1, 1);
-	append(0, 0, 2, 1, "right",	1, 0, 2, 1);
+	append(0, 0, 2, 1, "right",	2, 0, 2, 1);
 	append(0, 0, 2, 1, "down",	0, 1, 2, 1);
 
 	append(0, 0, 2, 2, "left",	0, 0, 1, 2);
@@ -83,6 +83,10 @@ int initiaize() {
 	append(0, 1, 1, 1, "right",	1, 1, 1, 1);
 	append(0, 1, 1, 1, "up",	0, 0, 1, 1);
 	append(0, 1, 1, 1, "down",	0, 2, 1, 1);
+
+	append(0, 1, 2, 1, "right",	2, 1, 2, 1);
+	append(0, 1, 2, 1, "up",	0, 0, 2, 1);
+	append(0, 1, 2, 1, "down",	0, 2, 2, 1);
 
 	append(1, 0, 1, 1, "left",	0, 0, 1, 1);
 	append(1, 0, 1, 1, "right",	2, 0, 1, 1);
