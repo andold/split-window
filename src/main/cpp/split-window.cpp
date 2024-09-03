@@ -481,13 +481,13 @@ int *get_map_way(int *result, int ix, int iy, int iw, int ih, string direction) 
 
 	//	xy축 대칭
 	if (direction.compare("left") == 0) {
-		arrow = "down";
-	} else if (direction.compare("right") == 0) {
-		arrow = "up";
-	} else if (direction.compare("up") == 0) {
 		arrow = "right";
-	} else if (direction.compare("down") == 0) {
+	} else if (direction.compare("right") == 0) {
 		arrow = "left";
+	} else if (direction.compare("up") == 0) {
+		arrow = "down";
+	} else if (direction.compare("down") == 0) {
+		arrow = "up";
 	} else {
 		arrow = direction;
 	}
@@ -501,12 +501,12 @@ int *get_map_way(int *result, int ix, int iy, int iw, int ih, string direction) 
 	key = ostring.str();
 	value = mapset[key];
 	if (value) {
-//		result[0] = max_ix - value[0] - value[2];
-//		result[1] = max_iy - value[1] - value[3];
-		result[0] = max_iy - value[1] - value[3];
-		result[1] = max_ix - value[0] - value[2];
-		result[2] = value[3];
-		result[3] = value[2];
+		result[0] = max_ix - value[0] - value[2];
+		result[1] = max_iy - value[1] - value[3];
+//		result[0] = max_iy - value[1] - value[3];
+//		result[1] = max_ix - value[0] - value[2];
+		result[2] = value[2];
+		result[3] = value[3];
 
 	   	logfile
 	    	<< "xy축 대칭("  << ix << ", " << iy << ", " << iw << ", " << ih << ")"
