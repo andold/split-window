@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <fstream>
@@ -55,10 +56,14 @@ int initiaize() {
 	append(0, 0, 1, 1, "right",	1, 0, 1, 1);
 	append(0, 0, 1, 1, "down",	0, 1, 1, 1);
 
+	append(0, 0, 1, 2, "up",	0, 0, 1, 1);
+
 	append(0, 0, 1, 4, "left",	0, 0, 4, 4);
 	append(0, 0, 1, 4, "right",	1, 0, 1, 4);
 
 	append(0, 0, 2, 1, "left",	0, 0, 1, 1);
+	append(0, 0, 2, 1, "right",	1, 0, 2, 1);
+	append(0, 0, 2, 1, "down",	0, 1, 2, 1);
 
 	append(0, 0, 2, 2, "left",	0, 0, 1, 2);
 	append(0, 0, 2, 2, "right",	2, 0, 2, 2);
@@ -75,7 +80,20 @@ int initiaize() {
 	append(0, 0, 4, 2, "up",	0, 0, 4, 1);
 	append(0, 0, 4, 2, "down",	0, 0, 4, 3);
 
+	append(0, 1, 1, 1, "right",	1, 1, 1, 1);
+	append(0, 1, 1, 1, "up",	0, 0, 1, 1);
+	append(0, 1, 1, 1, "down",	0, 2, 1, 1);
+
+	append(1, 0, 1, 1, "left",	0, 0, 1, 1);
+	append(1, 0, 1, 1, "right",	2, 0, 1, 1);
+	append(1, 0, 1, 1, "down",	1, 1, 1, 1);
+
 	append(1, 0, 1, 4, "right",	2, 0, 1, 4);
+
+	append(1, 1, 1, 1, "left",	0, 1, 1, 1);
+	append(1, 1, 1, 1, "right",	2, 1, 1, 1);
+	append(1, 1, 1, 1, "up",	1, 0, 1, 1);
+	append(1, 1, 1, 1, "down",	1, 2, 1, 1);
 
 	append(2, 0, 1, 4, "right",	3, 0, 1, 4);
 
@@ -264,18 +282,14 @@ int open() {
 	} else {
 		//	deskbar hidden
 	}
+//	mleft++;
+//	mtop++;
 
-	screen_width -= (mleft + mright);
-	screen_height -= (mtop + mbottom);
-	quarter_width = screen_width / 4;
-	quarter_height = screen_height / 4;
-	client_x -= mleft;
-	client_x--;
-	client_y -= 0;
-    //client_y--;
+	quarter_width = (screen_width - mleft - mright) / 4;
+	quarter_height = (screen_height - mtop - mbottom) / 4;
     
-	index_x = get_index(quarter_width, client_x);
-	index_y = get_index(quarter_height, client_y);
+	index_x = get_index(quarter_width, client_x - mleft);
+	index_y = get_index(quarter_height, client_y - mtop);
 	index_width = get_index(quarter_width, client_width);
 	index_height = get_index(quarter_height, client_height);
 
@@ -286,30 +300,67 @@ int close() {
 
 	return 0;
 }
-int set_window(int ix, int iy, int iw, int ih) {
-	if (iw == 4 && ih == 4 && false) {
-		//	maximize
-		XEvent x_event;
-		Atom wm_fullscreen;
-		
-		x_event.type = ClientMessage;
-		x_event.xclient.window = focusedWindow;
-		x_event.xclient.message_type = XInternAtom(display, "_NET_WM_STATE", False);
-		x_event.xclient.format = 32;
-		x_event.xclient.data.l[0] = 1;  /* 0 = Windowed, 1 = Fullscreen */
-		wm_fullscreen = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", False);
-		x_event.xclient.data.l[1] = wm_fullscreen;
-		x_event.xclient.data.l[2] = wm_fullscreen;
-		XSendEvent(display, XRootWindow(display, XDefaultScreen(display)), False, ClientMessage, &x_event);
+int move_resize_window(
+	Display* display, Window window
+	, int targetx, int targety
+	, unsigned int targetwidth, unsigned int targetheight
+	, int offsetx, int offsety
+	, int deltawidth, int deltaheight
+	, int depth) {
+
+	if (depth < 0) {
+		cout << endl;
 		return 0;
 	}
 
+	unsigned int USLEEP = 10000;
+
+	XMoveResizeWindow(
+		display, window
+		, targetx + offsetx
+		, targety + offsety
+		, targetwidth + deltawidth
+		, targetheight + deltaheight);
+	XFlush(display);
+	usleep(USLEEP);
+
+	int x, y;
+	unsigned int width, height;
+	get_rect_window(display, window, &x, &y, &width, &height);
+	int newoffsetx = targetx - x;
+	int newoffsety = targety - y;
+	int newdeltawidth = targetwidth - width;
+	int newdeltaheight = targetheight - height;
+
+	if (targetx == x && targety == y) {
+		return 1;
+	}
+
+/*
+	cout
+		<< "\t\t"
+    	<< ", target(" << targetx << ", " << targety << ", " << targetwidth << ", " << targetheight << ")"
+    	<< ", ±(" << offsetx << ", " << offsety << ")"
+    	<< ", real(" << x << ", " << y << ", " << width << ", " << height << ")"
+    	<< ", ±(" << newoffsetx << ", " << newoffsety << ")"
+    	<< ", depth(" << depth << ")"
+   		<< endl;
+*/
+
+	return move_resize_window(
+		display, window
+		, targetx, targety, targetwidth, targetheight
+		, offsetx + newoffsetx, offsety + newoffsety
+		, deltawidth + newdeltawidth, deltaheight + newdeltaheight
+		, depth - 1);
+}
+int set_window(int ix, int iy, int iw, int ih) {
 	int x = quarter_width * ix;
 	int y = quarter_height * iy;
 	int w = quarter_width * iw;
 	int h = quarter_height * ih;
 
-    XMoveResizeWindow(display, focusedWindow, x + mleft, y + mtop, w, h);
+    move_resize_window(display, focusedWindow, x + mleft, y + mtop, w, h, 0, 0, 0, 0, 3);
 
    	logfile
     	<< "screen(" << screen_width << ", " << screen_height << ")"
@@ -430,13 +481,13 @@ int *get_map_way(int *result, int ix, int iy, int iw, int ih, string direction) 
 
 	//	xy축 대칭
 	if (direction.compare("left") == 0) {
-		arrow = "right";
-	} else if (direction.compare("right") == 0) {
-		arrow = "left";
-	} else if (direction.compare("up") == 0) {
 		arrow = "down";
-	} else if (direction.compare("down") == 0) {
+	} else if (direction.compare("right") == 0) {
 		arrow = "up";
+	} else if (direction.compare("up") == 0) {
+		arrow = "right";
+	} else if (direction.compare("down") == 0) {
+		arrow = "left";
 	} else {
 		arrow = direction;
 	}
@@ -450,10 +501,12 @@ int *get_map_way(int *result, int ix, int iy, int iw, int ih, string direction) 
 	key = ostring.str();
 	value = mapset[key];
 	if (value) {
-		result[0] = max_ix - value[0] - value[2];
-		result[1] = max_iy - value[1] - value[3];
-		result[2] = value[2];
-		result[3] = value[3];
+//		result[0] = max_ix - value[0] - value[2];
+//		result[1] = max_iy - value[1] - value[3];
+		result[0] = max_iy - value[1] - value[3];
+		result[1] = max_ix - value[0] - value[2];
+		result[2] = value[3];
+		result[3] = value[2];
 
 	   	logfile
 	    	<< "xy축 대칭("  << ix << ", " << iy << ", " << iw << ", " << ih << ")"
