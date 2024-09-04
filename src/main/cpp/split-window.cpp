@@ -66,14 +66,20 @@ int initiaize() {
 	append(0, 0, 2, 1, "down",	0, 1, 2, 1);
 
 	append(0, 0, 2, 2, "left",	0, 0, 1, 2);
-	append(0, 0, 2, 2, "right",	2, 0, 2, 2);
+	append(0, 0, 2, 2, "right",	0, 0, 3, 2);
 	append(0, 0, 2, 2, "up",	0, 0, 2, 1);
-	append(0, 0, 2, 2, "down",	0, 2, 2, 2);
+	append(0, 0, 2, 2, "down",	0, 0, 2, 3);
+
+	append(0, 0, 2, 3, "right",	1, 0, 2, 3);
+	append(0, 0, 2, 3, "down",	0, 1, 2, 3);
 
 	append(0, 0, 2, 4, "left",	0, 0, 1, 4);
 	append(0, 0, 2, 4, "right",	0, 0, 3, 4);
 	append(0, 0, 2, 4, "up",	0, 0, 2, 2);
 	append(0, 0, 2, 4, "down",	0, 2, 2, 2);
+
+	append(0, 0, 3, 2, "right",	1, 0, 3, 2);
+	append(0, 0, 3, 2, "down",	0, 1, 3, 2);
 
 	append(0, 0, 4, 2, "left",	0, 0, 2, 2);
 	append(0, 0, 4, 2, "right",	2, 0, 2, 2);
@@ -88,11 +94,19 @@ int initiaize() {
 	append(0, 1, 2, 1, "up",	0, 0, 2, 1);
 	append(0, 1, 2, 1, "down",	0, 2, 2, 1);
 
+	append(0, 1, 2, 3, "up",	0, 0, 2, 3);
+
+	append(0, 1, 3, 2, "up",	0, 0, 3, 2);
+
 	append(1, 0, 1, 1, "left",	0, 0, 1, 1);
 	append(1, 0, 1, 1, "right",	2, 0, 1, 1);
 	append(1, 0, 1, 1, "down",	1, 1, 1, 1);
 
 	append(1, 0, 1, 4, "right",	2, 0, 1, 4);
+
+	append(1, 0, 2, 3, "left",	0, 0, 2, 3);
+
+	append(1, 0, 3, 2, "left",	0, 0, 3, 2);
 
 	append(1, 1, 1, 1, "left",	0, 1, 1, 1);
 	append(1, 1, 1, 1, "right",	2, 1, 1, 1);
